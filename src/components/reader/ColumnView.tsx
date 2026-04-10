@@ -1,6 +1,7 @@
 "use client";
 
 import { ParagraphBlock } from "./ParagraphBlock";
+import type { WordSelection } from "./WordLookupPopover";
 
 interface Paragraph {
   id: string;
@@ -22,11 +23,14 @@ interface ColumnViewProps {
   paragraphs: Paragraph[];
   highlightedId: string | null;
   onParagraphClick: (id: string) => void;
+  onWordSelect?: (selection: WordSelection) => void;
   fontSize: number;
   lineHeight: number;
   fontFamily: string;
   paragraphSpacing: "compact" | "standard" | "relaxed";
 }
+
+const MAX_SELECTION_LENGTH = 50;
 
 export function ColumnView({
   lang,
@@ -35,13 +39,42 @@ export function ColumnView({
   paragraphs,
   highlightedId,
   onParagraphClick,
+  onWordSelect,
   fontSize,
   lineHeight,
   fontFamily,
   paragraphSpacing,
 }: ColumnViewProps) {
+  const isSourceColumn = lang === sourceLang;
+
+  const handleMouseUp = () => {
+    if (!isSourceColumn || !onWordSelect) return;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    const word = sel.toString().trim();
+    if (word.length === 0 || word.length > MAX_SELECTION_LENGTH) return;
+
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+
+    // Walk up from the selection start to the nearest <p> so we can capture
+    // the paragraph text as context for the vocabulary entry.
+    let node: Node | null = range.startContainer;
+    while (node && node.nodeType !== Node.ELEMENT_NODE) node = node.parentNode;
+    let paragraphEl: HTMLElement | null = node as HTMLElement | null;
+    while (paragraphEl && paragraphEl.tagName !== "P") {
+      paragraphEl = paragraphEl.parentElement;
+    }
+    const contextText = paragraphEl?.textContent?.trim() ?? "";
+
+    onWordSelect({ word, lang, rect, contextText });
+  };
+
   return (
-    <div className="flex-1 px-5 py-4 overflow-y-auto">
+    <div
+      className="flex-1 px-5 py-4 overflow-y-auto"
+      onMouseUp={handleMouseUp}
+    >
       <div className="text-center text-xs text-muted-foreground uppercase mb-3 font-sans">
         {label}
       </div>

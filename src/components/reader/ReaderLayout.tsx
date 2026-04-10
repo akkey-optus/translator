@@ -6,6 +6,7 @@ import { BottomBar } from "./BottomBar";
 import { ChapterSidebar } from "./ChapterSidebar";
 import { ColumnView } from "./ColumnView";
 import { SettingsDrawer, ReaderSettings } from "./SettingsDrawer";
+import { WordLookupPopover, type WordSelection } from "./WordLookupPopover";
 
 interface Chapter {
   id: string;
@@ -66,6 +67,7 @@ export function ReaderLayout({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [settings, setSettings] = useState<ReaderSettings>(DEFAULT_SETTINGS);
+  const [wordSelection, setWordSelection] = useState<WordSelection | null>(null);
 
   const currentChapter = chapters.find((ch) => ch.index === currentIndex);
 
@@ -165,6 +167,7 @@ export function ReaderLayout({
                 paragraphs={content.paragraphs}
                 highlightedId={highlightedId}
                 onParagraphClick={setHighlightedId}
+                onWordSelect={setWordSelection}
                 fontSize={settings.fontSize}
                 lineHeight={settings.lineHeight}
                 fontFamily={settings.fonts[lang as keyof typeof settings.fonts] || "serif"}
@@ -192,6 +195,18 @@ export function ReaderLayout({
         settings={settings}
         onSettingsChange={setSettings}
       />
+
+      {wordSelection && (
+        <WordLookupPopover
+          selection={wordSelection}
+          bookId={bookId}
+          onClose={() => {
+            setWordSelection(null);
+            // Clear the browser selection so the user doesn't see stale highlights.
+            window.getSelection()?.removeAllRanges();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -41,7 +41,11 @@ export default function HomePage() {
           <h1 className="text-2xl font-bold">三語リーダー</h1>
           <p className="text-muted-foreground">Trilingual EPUB Reader</p>
         </div>
-        <Link href="/settings" className="text-sm text-muted-foreground hover:text-foreground">Settings</Link>
+        <nav className="flex items-center gap-4 text-sm text-muted-foreground">
+          <Link href="/dictionary" className="hover:text-foreground">Dictionaries</Link>
+          <Link href="/vocabulary" className="hover:text-foreground">Vocabulary</Link>
+          <Link href="/settings" className="hover:text-foreground">Settings</Link>
+        </nav>
       </header>
 
       <section className="mb-8">

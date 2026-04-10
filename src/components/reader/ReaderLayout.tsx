@@ -19,7 +19,10 @@ interface Paragraph {
   id: string;
   seq: number;
   sourceText: string;
-  translations: Record<string, { text: string; status: string }>;
+  translations: Record<
+    string,
+    { text: string | null; status: string; errorMessage?: string | null }
+  >;
 }
 
 interface ChapterContent {
@@ -68,6 +71,7 @@ export function ReaderLayout({
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [settings, setSettings] = useState<ReaderSettings>(DEFAULT_SETTINGS);
   const [wordSelection, setWordSelection] = useState<WordSelection | null>(null);
+  const [retryingIds, setRetryingIds] = useState<Set<string>>(new Set());
 
   const currentChapter = chapters.find((ch) => ch.index === currentIndex);
 
@@ -98,6 +102,32 @@ export function ReaderLayout({
     await fetch(`/api/chapters/${chapterId}/translate`, { method: "POST" });
   }, []);
 
+  // Retry a single paragraph's failed translations
+  const handleRetryParagraph = useCallback(
+    async (paragraphId: string) => {
+      setRetryingIds((prev) => {
+        const next = new Set(prev);
+        next.add(paragraphId);
+        return next;
+      });
+      try {
+        await fetch(`/api/paragraphs/${paragraphId}/retry`, { method: "POST" });
+        if (currentChapter) {
+          await fetchContent(currentChapter.id);
+        }
+      } catch (err) {
+        console.error("Retry failed:", err);
+      } finally {
+        setRetryingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(paragraphId);
+          return next;
+        });
+      }
+    },
+    [currentChapter, fetchContent],
+  );
+
   // Load chapter when index changes
   useEffect(() => {
     const ch = chapters.find((c) => c.index === currentIndex);
@@ -105,8 +135,10 @@ export function ReaderLayout({
 
     fetchContent(ch.id).catch(() => {});
 
-    // Trigger translation if needed
-    if (ch.status === "pending") {
+    // Trigger translation if needed. "error" means a previous run stopped
+    // before finishing (e.g. token exhaustion) — re-calling translate is safe
+    // because the route skips paragraphs already marked done.
+    if (ch.status === "pending" || ch.status === "error") {
       triggerTranslation(ch.id).catch(() => {});
     }
 
@@ -124,10 +156,12 @@ export function ReaderLayout({
     }
   }, [currentIndex, chapters, bookId, fetchContent, triggerTranslation]);
 
-  // Poll for translation status
+  // Poll for translation status while the chapter is still progressing.
+  // Terminal states ("done", "error") stop polling — a user Retry re-sets
+  // the chapter to "translating" via the retry API, which restarts the loop.
   useEffect(() => {
     if (!currentChapter || !content) return;
-    if (content.status === "done") return;
+    if (content.status === "done" || content.status === "error") return;
 
     const interval = setInterval(() => {
       if (!currentChapter) return;
@@ -168,6 +202,8 @@ export function ReaderLayout({
                 highlightedId={highlightedId}
                 onParagraphClick={setHighlightedId}
                 onWordSelect={setWordSelection}
+                onRetryParagraph={handleRetryParagraph}
+                retryingIds={retryingIds}
                 fontSize={settings.fontSize}
                 lineHeight={settings.lineHeight}
                 fontFamily={settings.fonts[lang as keyof typeof settings.fonts] || "serif"}

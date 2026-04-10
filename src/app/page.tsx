@@ -35,36 +35,74 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen p-6 max-w-5xl mx-auto">
-      <header className="mb-8 flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">三語リーダー</h1>
-          <p className="text-muted-foreground">Trilingual EPUB Reader</p>
+    <div className="min-h-screen px-6 py-10 sm:py-14 max-w-6xl mx-auto">
+      <header className="mb-12 flex items-start justify-between gap-6">
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-700">
+          <h1
+            className="text-4xl sm:text-5xl font-medium tracking-tight"
+            style={{ fontFamily: "var(--font-noto-jp), serif" }}
+          >
+            三語リーダー
+          </h1>
+          <p
+            className="mt-2 text-muted-foreground text-base italic"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            Trilingual EPUB Reader
+          </p>
         </div>
-        <nav className="flex items-center gap-4 text-sm text-muted-foreground">
-          <Link href="/dictionary" className="hover:text-foreground">Dictionaries</Link>
-          <Link href="/vocabulary" className="hover:text-foreground">Vocabulary</Link>
-          <Link href="/settings" className="hover:text-foreground">Settings</Link>
+        <nav className="flex items-center gap-1 text-sm animate-in fade-in duration-700 delay-100">
+          {[
+            { href: "/dictionary", label: "Dictionaries" },
+            { href: "/vocabulary", label: "Vocabulary" },
+            { href: "/settings", label: "Settings" },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="px-3 py-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
       </header>
 
-      <section className="mb-8">
+      <section className="mb-12 animate-in fade-in slide-in-from-bottom-3 duration-700 delay-150">
         <UploadZone onUploadComplete={fetchBooks} />
       </section>
 
       {books.length > 0 ? (
         <section>
-          <h2 className="text-lg font-semibold mb-4">Library</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {books.map((book) => (
-              <BookCard key={book.id} book={book} onDelete={handleDelete} />
+          <h2
+            className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-5 animate-in fade-in duration-700 delay-200"
+          >
+            Library
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {books.map((book, i) => (
+              <div
+                key={book.id}
+                className="stagger-fade-in"
+                style={{ animationDelay: `${250 + i * 60}ms` }}
+              >
+                <BookCard book={book} onDelete={handleDelete} />
+              </div>
             ))}
           </div>
         </section>
       ) : (
-        <p className="text-center text-muted-foreground py-12">
-          Upload an EPUB to get started
-        </p>
+        <div className="text-center py-16 animate-in fade-in duration-700 delay-200">
+          <p
+            className="text-muted-foreground italic text-lg"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            Your library is empty.
+          </p>
+          <p className="text-muted-foreground/70 text-sm mt-1">
+            Upload an EPUB above to begin.
+          </p>
+        </div>
       )}
     </div>
   );

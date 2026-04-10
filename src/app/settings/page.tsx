@@ -96,15 +96,31 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen p-6 max-w-2xl mx-auto">
-      <header className="mb-8 flex items-center gap-4">
-        <Link href="/" className="text-muted-foreground hover:text-foreground">← Back</Link>
-        <h1 className="text-2xl font-bold">Settings</h1>
+    <div className="min-h-screen px-6 py-10 sm:py-14 max-w-2xl mx-auto">
+      <header className="mb-10 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <Link
+          href="/"
+          className="h-10 w-10 flex items-center justify-center rounded-full border border-border/60 text-foreground hover:bg-accent/60 hover:border-primary/40 hover:-translate-x-0.5 transition-all duration-200"
+          aria-label="Back to library"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </Link>
+        <h1
+          className="text-3xl font-medium tracking-tight"
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
+          Settings
+        </h1>
       </header>
 
-      <Card>
+      <Card className="border-border/50 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500 delay-75">
         <CardHeader>
-          <CardTitle>LLM Configuration</CardTitle>
+          <CardTitle
+            className="text-base font-medium tracking-tight"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            LLM Configuration
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>

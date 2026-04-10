@@ -33,10 +33,17 @@ export async function GET(
       ...p,
       translations: trans.reduce(
         (acc, t) => {
-          acc[t.lang] = { text: t.text, status: t.status };
+          acc[t.lang] = {
+            text: t.text,
+            status: t.status,
+            errorMessage: t.errorMessage,
+          };
           return acc;
         },
-        {} as Record<string, { text: string; status: string }>,
+        {} as Record<
+          string,
+          { text: string | null; status: string; errorMessage: string | null }
+        >,
       ),
     };
   });

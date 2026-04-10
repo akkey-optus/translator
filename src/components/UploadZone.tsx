@@ -66,8 +66,10 @@ export function UploadZone({ onUploadComplete }: UploadZoneProps) {
 
   return (
     <div
-      className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-        isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25"
+      className={`relative border border-dashed rounded-2xl px-8 py-14 text-center transition-all duration-300 ease-out ${
+        isDragging
+          ? "border-primary bg-primary/5 scale-[1.01]"
+          : "border-border hover:border-primary/40 hover:bg-accent/20"
       }`}
       onDragOver={(e) => {
         e.preventDefault();
@@ -77,14 +79,40 @@ export function UploadZone({ onUploadComplete }: UploadZoneProps) {
       onDrop={handleDrop}
     >
       {isUploading ? (
-        <p className="text-muted-foreground">Uploading and parsing...</p>
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+          <p className="text-muted-foreground text-sm">Uploading and parsing…</p>
+        </div>
       ) : (
         <>
-          <p className="text-muted-foreground mb-4">
-            Drag and drop an EPUB file here, or click to select
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+          </div>
+          <p
+            className="text-lg mb-1 tracking-tight"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            Drop an EPUB here
+          </p>
+          <p className="text-sm text-muted-foreground mb-5">
+            …or click below to select a file
           </p>
           <label className="inline-flex cursor-pointer">
-            <span className={buttonVariants({ variant: "outline" })}>
+            <span className={buttonVariants({ variant: "outline", size: "sm" })}>
               Select EPUB
             </span>
             <input
@@ -96,7 +124,7 @@ export function UploadZone({ onUploadComplete }: UploadZoneProps) {
           </label>
         </>
       )}
-      {error && <p className="text-destructive mt-2 text-sm">{error}</p>}
+      {error && <p className="text-destructive mt-3 text-sm">{error}</p>}
     </div>
   );
 }

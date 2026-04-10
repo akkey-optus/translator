@@ -38,6 +38,14 @@ export async function POST(
   }
   const queue = getTranslationQueue();
 
+  // Flip the chapter back out of its terminal state so the reader poll loop
+  // resumes. checkChapterDone will move it to "done" or "error" again once
+  // everything settles.
+  db.update(chapters)
+    .set({ status: "translating", updatedAt: new Date().toISOString() })
+    .where(eq(chapters.id, para.chapterId))
+    .run();
+
   for (const t of failedTranslations) {
     db.update(translations)
       .set({ status: "pending", errorMessage: null, updatedAt: new Date().toISOString() })

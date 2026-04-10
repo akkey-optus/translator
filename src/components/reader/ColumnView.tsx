@@ -7,7 +7,10 @@ interface Paragraph {
   id: string;
   seq: number;
   sourceText: string;
-  translations: Record<string, { text: string; status: string }>;
+  translations: Record<
+    string,
+    { text: string | null; status: string; errorMessage?: string | null }
+  >;
 }
 
 const SPACING_CLASS: Record<"compact" | "standard" | "relaxed", string> = {
@@ -24,6 +27,8 @@ interface ColumnViewProps {
   highlightedId: string | null;
   onParagraphClick: (id: string) => void;
   onWordSelect?: (selection: WordSelection) => void;
+  onRetryParagraph?: (paragraphId: string) => void;
+  retryingIds?: Set<string>;
   fontSize: number;
   lineHeight: number;
   fontFamily: string;
@@ -40,6 +45,8 @@ export function ColumnView({
   highlightedId,
   onParagraphClick,
   onWordSelect,
+  onRetryParagraph,
+  retryingIds,
   fontSize,
   lineHeight,
   fontFamily,
@@ -72,19 +79,20 @@ export function ColumnView({
 
   return (
     <div
-      className="flex-1 px-5 py-4 overflow-y-auto"
+      className="flex-1 px-8 py-8 overflow-y-auto animate-in fade-in duration-500"
       onMouseUp={handleMouseUp}
     >
-      <div className="text-center text-xs text-muted-foreground uppercase mb-3 font-sans">
+      <div className="text-center text-[10px] text-muted-foreground uppercase tracking-[0.22em] mb-6 font-sans font-medium">
         {label}
       </div>
-      <div>
+      <div className="max-w-[42rem] mx-auto">
         {paragraphs.map((p) => {
           const isSource = lang === sourceLang;
           const text = isSource
             ? p.sourceText
             : p.translations[lang]?.text || "";
           const status = isSource ? "done" : p.translations[lang]?.status || "pending";
+          const errorMessage = isSource ? null : p.translations[lang]?.errorMessage ?? null;
 
           return (
             <div key={p.id} className={SPACING_CLASS[paragraphSpacing]}>
@@ -97,6 +105,9 @@ export function ColumnView({
                 lineHeight={lineHeight}
                 fontFamily={fontFamily}
                 status={status}
+                errorMessage={errorMessage}
+                onRetry={isSource ? undefined : onRetryParagraph}
+                retrying={retryingIds?.has(p.id)}
               />
             </div>
           );

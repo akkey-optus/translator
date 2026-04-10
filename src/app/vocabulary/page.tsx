@@ -78,15 +78,28 @@ export default function VocabularyPage() {
   };
 
   return (
-    <div className="min-h-screen p-6 max-w-4xl mx-auto">
-      <header className="mb-8 flex items-center gap-4">
-        <Link href="/" className="text-muted-foreground hover:text-foreground">← Back</Link>
-        <h1 className="text-2xl font-bold">Vocabulary</h1>
+    <div className="min-h-screen px-6 py-10 sm:py-14 max-w-4xl mx-auto">
+      <header className="mb-10 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <Link
+          href="/"
+          className="h-10 w-10 flex items-center justify-center rounded-full border border-border/60 text-foreground hover:bg-accent/60 hover:border-primary/40 hover:-translate-x-0.5 transition-all duration-200"
+          aria-label="Back to library"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </Link>
+        <h1
+          className="text-3xl font-medium tracking-tight"
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
+          Vocabulary
+        </h1>
       </header>
 
-      <Card className="mb-4">
+      <Card className="mb-5 border-border/50 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500 delay-75">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Filter</CardTitle>
+          <CardTitle className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-medium">
+            Filter
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 sm:flex-row">
           <div className="sm:w-48">
@@ -113,52 +126,73 @@ export default function VocabularyPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border-border/50 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500 delay-150">
         <CardHeader>
-          <CardTitle>
+          <CardTitle
+            className="text-base font-medium tracking-tight"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
             {filtered.length} {filtered.length === 1 ? "entry" : "entries"}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-muted-foreground text-center py-8">Loading…</p>
+            <p className="text-muted-foreground text-center py-8 italic" style={{ fontFamily: "var(--font-heading)" }}>
+              Loading…
+            </p>
           ) : filtered.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
+            <p className="text-muted-foreground text-center py-10 italic" style={{ fontFamily: "var(--font-heading)" }}>
               {entries.length === 0
                 ? "No vocabulary yet. Select a word in the reader to save it."
                 : "No entries match your filter."}
             </p>
           ) : (
-            <div className="divide-y divide-border">
-              {filtered.map((e) => (
-                <div key={e.id} className="py-3 flex items-start gap-4">
+            <div className="divide-y divide-border/50">
+              {filtered.map((e, i) => (
+                <div
+                  key={e.id}
+                  className="py-4 flex items-start gap-4 stagger-fade-in"
+                  style={{ animationDelay: `${i * 30}ms` }}
+                >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 flex-wrap">
-                      <span className="text-lg font-medium">{e.word}</span>
+                      <span
+                        className="text-xl font-medium tracking-tight"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
+                        {e.word}
+                      </span>
                       {e.reading && (
-                        <span className="text-sm text-muted-foreground">{e.reading}</span>
+                        <span className="text-sm text-muted-foreground italic">{e.reading}</span>
                       )}
-                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground border border-border rounded px-1">
+                      <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground bg-muted/60 rounded-full px-2 py-0.5 font-medium">
                         {formatLang(e.lang)}
                       </span>
                     </div>
-                    <div className="text-sm text-muted-foreground mt-1 break-words">{e.gloss}</div>
+                    <div className="text-sm text-foreground/80 mt-1.5 break-words leading-relaxed">
+                      {e.gloss}
+                    </div>
                     {e.note && (
-                      <div className="text-xs text-muted-foreground mt-1 italic">
+                      <div className="text-xs text-muted-foreground mt-1.5 italic">
                         Note: {e.note}
                       </div>
                     )}
                     {e.sourceContext && (
-                      <div className="text-xs text-muted-foreground/70 mt-1 line-clamp-2">
-                        “{e.sourceContext}”
+                      <div className="text-xs text-muted-foreground/70 mt-1.5 line-clamp-2 italic">
+                        &ldquo;{e.sourceContext}&rdquo;
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex gap-2 shrink-0 opacity-60 hover:opacity-100 transition-opacity">
                     <Button size="sm" variant="outline" onClick={() => setEditing(e)}>
                       Edit
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleDelete(e.id)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-muted-foreground hover:text-destructive hover:border-destructive/40"
+                      onClick={() => handleDelete(e.id)}
+                    >
                       Delete
                     </Button>
                   </div>

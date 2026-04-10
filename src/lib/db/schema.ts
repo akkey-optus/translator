@@ -53,3 +53,29 @@ export const readingProgress = sqliteTable("reading_progress", {
   scrollPosition: real("scroll_position").notNull().default(0),
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
+
+export const dictionaries = sqliteTable("dictionaries", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  format: text("format").notNull(), // 'jmdict' | 'cedict'
+  sourceLang: text("source_lang").notNull(), // 'ja' | 'zh'
+  entryCount: integer("entry_count").notNull().default(0),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// Note: dict_entries is an FTS5 virtual table created via raw SQL migration.
+// Drizzle's schema DSL does not support FTS5, so we interact with it via
+// sqlite.prepare() directly in src/lib/dict/*.
+
+export const vocabulary = sqliteTable("vocabulary", {
+  id: text("id").primaryKey(),
+  word: text("word").notNull(),
+  lang: text("lang").notNull(), // 'ja' | 'zh' | 'en'
+  reading: text("reading"),
+  gloss: text("gloss").notNull(),
+  note: text("note"),
+  sourceBookId: text("source_book_id"), // nullable, no cascade
+  sourceContext: text("source_context"),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+});

@@ -110,4 +110,58 @@ describe("database schema", () => {
     expect(progress!.chapterIndex).toBe(2);
     expect(progress!.scrollPosition).toBe(0.45);
   });
+
+  it("should insert and query dictionary metadata", () => {
+    const dictId = randomUUID();
+    db.insert(schema.dictionaries).values({
+      id: dictId,
+      name: "JMdict (English)",
+      format: "jmdict",
+      sourceLang: "ja",
+      entryCount: 200000,
+    }).run();
+
+    const dict = db.select().from(schema.dictionaries)
+      .where(eq(schema.dictionaries.id, dictId)).get();
+    expect(dict).toBeDefined();
+    expect(dict!.format).toBe("jmdict");
+    expect(dict!.entryCount).toBe(200000);
+  });
+
+  it("should insert into FTS5 dict_entries and find via MATCH", () => {
+    const dictId = randomUUID();
+    sqlite.prepare(
+      "INSERT INTO dict_entries (dictionary_id, headword, reading, gloss) VALUES (?, ?, ?, ?)",
+    ).run(dictId, "行く", "いく", "to go");
+    sqlite.prepare(
+      "INSERT INTO dict_entries (dictionary_id, headword, reading, gloss) VALUES (?, ?, ?, ?)",
+    ).run(dictId, "食べる", "たべる", "to eat");
+
+    const rows = sqlite.prepare(
+      "SELECT headword, reading, gloss FROM dict_entries WHERE dict_entries MATCH ?",
+    ).all("headword:行く") as Array<{ headword: string; reading: string; gloss: string }>;
+
+    expect(rows.length).toBe(1);
+    expect(rows[0].headword).toBe("行く");
+    expect(rows[0].reading).toBe("いく");
+  });
+
+  it("should insert and query vocabulary entries", () => {
+    const vocabId = randomUUID();
+    db.insert(schema.vocabulary).values({
+      id: vocabId,
+      word: "頑張る",
+      lang: "ja",
+      reading: "がんばる",
+      gloss: "to persist; to do one's best",
+      note: "common verb",
+    }).run();
+
+    const entry = db.select().from(schema.vocabulary)
+      .where(eq(schema.vocabulary.id, vocabId)).get();
+    expect(entry).toBeDefined();
+    expect(entry!.word).toBe("頑張る");
+    expect(entry!.reading).toBe("がんばる");
+    expect(entry!.sourceBookId).toBeNull();
+  });
 });

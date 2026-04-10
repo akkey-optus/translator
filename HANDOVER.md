@@ -8,18 +8,21 @@ A self-hosted Next.js 16 web app for reading Japanese/Chinese/English EPUB novel
 
 ## Current status
 
-**All 14 planned tasks are implemented and committed** as a single clean commit (`1ae0bd2`). The feature set is functionally complete; what's missing is real end-to-end verification with a live API key and a real Docker build.
+All 14 original plan tasks are implemented. Since then, several follow-up work streams have landed on top of the original commit (`1ae0bd2`):
+
+- **Vocabulary edit dialog** — `VocabularyEditDialog` (Base UI) hooked into `/vocabulary` page with inline edit + delete.
+- **Translation resume / per-paragraph retry UX** — API surfaces per-paragraph `errorMessage`, failed paragraphs render an error card with a retry button, chapter poll loop exits on `error`, auto-retry fires on chapter `pending | error`, and the retry route flips the chapter back to `translating` so polling restarts cleanly.
+- **UI beautification pass** — warm ink/paper oklch palette (light + dark), Fraunces variable heading font via `next/font/google`, body radial-gradient background (`background-attachment: fixed`), custom scrollbars, a `stagger-fade-in` @utility keyframe, and reworked `BookCard`, `UploadZone`, `TopBar` (segmented view-mode pill + icon buttons), `BottomBar` (top progress bar + `backdrop-blur-xl`), `ChapterSidebar` (animated width + indicator bar), `ColumnView` (`max-w-[42rem]` centered + uppercase tracking header), `ParagraphBlock` (ring highlight + pulse). Dictionary / vocabulary / settings pages share a consistent header with a prominent circular back button (`h-10 w-10` ring, 18 px stroke-2.25 icon, `hover:-translate-x-0.5`).
 
 ### What's verified
-- `npm run build` — clean, 15 routes generated
+- `npm run build` — clean as of the current state, 21 routes
 - `npm test` — 17/17 Vitest tests passing (db schema, EPUB parser, provider factory, translation queue)
 - API smoke tests via HTTP (upload → books list → settings round-trip) done during task 14
-- Dev server boots and home page / settings page render
+- Dev server boots; home, reader, settings, dictionary, vocabulary all render
 
 ### What's NOT verified (pending manual work)
 - **Real translation end-to-end** — no one has plugged in a real API key and watched a chapter translate through the queue. The provider abstractions are unit-tested, but nothing has exercised the full `upload → parse → translate → render` path with a live LLM.
 - **Docker build + runtime** — `Dockerfile` and `docker-compose.yml` are written but never executed. The user asked us to skip `docker compose build/up` to avoid disturbing other running containers. The alpine build toolchain fix (`python3 make g++` for `better-sqlite3`) is in place but unverified.
-- **Reader UI interactions in a real browser** — no human has clicked through view-mode switching, highlight sync, settings drawer sliders, or paragraph spacing changes against a translated chapter.
 - **EPUB export** — `/api/export/[bookId]` route exists and has an HTML-escape fix applied, but no one has downloaded the result and opened it in an EPUB reader.
 
 ## Tech stack — read this before editing anything
@@ -40,12 +43,14 @@ A self-hosted Next.js 16 web app for reading Japanese/Chinese/English EPUB novel
 ### Base UI gotchas (bitten us multiple times)
 - `Sheet` / `Dialog` `onOpenChange` signature is `(open: boolean, eventDetails) => void`, NOT Radix's `(open: boolean) => void`. Pattern: `onOpenChange={(open) => { if (!open) onClose(); }}`.
 - `Slider` value is `number | readonly number[]`. Always unwrap: `const val = Array.isArray(v) ? v[0] : v; if (val !== undefined) ...`.
+- `Slider` `thumbAlignment` must be `"center"`. Any other value (including the default `"edge"`) makes Base UI's `SliderThumb` emit a prehydration `<script>` tag for SSR positioning, which React 19 warns about: *"Encountered a script tag while rendering React component."* See `src/components/ui/slider.tsx`.
 - `Select` `onValueChange` may emit `null`. Guard: `if (v !== null) ...`.
 - `SelectTrigger` defaults to `w-fit`, not `w-full` — add `className="w-full"` explicitly when placing in a form.
 
 ### Next.js 16 gotchas
 - `src/instrumentation.ts` runs once at server startup. We use it to run Drizzle migrations via dynamic import, guarded by `process.env.NEXT_RUNTIME === "nodejs"`. This is **required** — without it, a fresh DB has no tables and every API call 500s.
 - `next.config.ts` must set `output: "standalone"` and `serverExternalPackages: ["better-sqlite3"]` for Docker to work.
+- **`next/font/google` variable fonts**: when you specify `axes` (e.g. `axes: ["SOFT", "opsz"]` on Fraunces), you MUST NOT also pass a `weight` array. The loader errors with *"Axes can only be defined for variable fonts when the weight property is nonexistent or set to `variable`."* See `src/app/layout.tsx` Fraunces config.
 
 ## Running locally
 
@@ -137,16 +142,16 @@ The original `getTranslationQueue()` hardcoded `createProvider("claude", process
 
 ## Known open items / good first pickups
 
-1. **Exercise the translation pipeline end-to-end with a real key** — this is the highest-priority gap. Expect to find integration bugs the unit tests can't catch (error handling, rate limits, timeout behavior, partial-failure recovery).
+1. **Exercise the translation pipeline end-to-end with a real key** — this is still the highest-priority gap. The retry-on-error path has now been wired up in the UI, but no one has actually driven a token-exhaustion or rate-limit scenario through it with a live provider.
 2. **Build and run the Docker image** — verify alpine native compile works, verify the volume persists data, verify port 3100 binding.
 3. **Manual UI pass on the reader** — single/dual/triple view switching, paragraph highlight sync across columns, settings drawer changes reflect live without reload, scroll position restore.
 4. **EPUB export round-trip** — download an exported book, open it in a real EPUB reader, confirm translations are embedded correctly and the HTML escaping holds up on tricky input.
 5. **Reader keyboard shortcuts** — not implemented. Would be a nice UX addition (j/k for paragraphs, h/l for chapters).
-6. **Retry UI for failed paragraphs** — the `/api/paragraphs/[id]/retry` route exists but there's no button in the reader to trigger it.
 
 ## Git state
 
-- Single clean commit `1ae0bd2` on `master`.
+- Base commit `1ae0bd2` on `master` contains the original 14-task implementation.
+- **All subsequent work (vocabulary dialog, translation resume/retry UX, UI beautification) is currently uncommitted.** The user took over commit responsibility partway through the follow-up work — do NOT auto-commit; let the user stage and commit themselves.
 - No remote configured. The previous agent did not have `gh` CLI; the user said they would push to GitHub themselves.
 - `.claude/` and `.superpowers/` and `data/` and `.env.local` are gitignored.
 
@@ -158,6 +163,8 @@ This codebase was built using the Superpowers **subagent-driven development** fl
 
 - **Terse output, no ceremony.** Do not re-summarize what you just did; the diff speaks for itself.
 - **Chinese or English both fine**, matches user's last message.
-- **Do not disturb the user's other running Docker projects.** Port 3000 is taken — reader uses 3100 in compose.
+- **Do not disturb the user's other running Docker projects.** Port 3000 is taken by this project's dev server when running — reader uses 3100 in compose. When stopping services for this project, scope kills to processes whose command line contains `C:\Programming\translator` so other projects are untouched.
+- **Do not commit on the user's behalf.** The user handles all git commits themselves. Stage-only is also discouraged — just leave the tree dirty and tell them what changed.
 - **Do not auto-confirm destructive git operations** (reset --hard, force push, etc.) without asking.
 - User has **no Claude API key** at the moment. OpenAI or OpenRouter is the practical default.
+- **Aesthetic direction for this app:** warm paper/ink palette, serif display face (Fraunces) for headings, subtle radial-gradient backdrop, `backdrop-blur-xl` on bars, stagger-fade-in on lists, hover micro-interactions (lift / translate / ring). The user rejected wrapping pages in rounded-bordered "card" containers — said those made pages look like modals. Keep full-bleed page layouts with just the header + cards inside.
